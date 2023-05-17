@@ -1,27 +1,27 @@
 module_enable_status:                 # do NOT modify modules order
-  dpc: True
-  blc: True
-  aaf: True
-  awb: True
-  cnf: True
+  dpc: False
+  blc: False
+  aaf: False
+  awb: False
+  cnf: False
   cfa: True
-  ccm: True
-  gac: True
-  csc: True
-  nlm: True
-  bnf: True
-  ceh: True
-  eeh: True
-  fcs: True
-  hsc: True
-  bcc: True
+  ccm: False
+  gac: False
+  csc: False
+  nlm: False
+  bnf: False
+  ceh: False
+  eeh: False
+  fcs: False
+  hsc: False
+  bcc: False
   scl: False
 
 hardware:
-  raw_width: 1920
-  raw_height: 1080
+  raw_width: 2592
+  raw_height: 1944
   raw_bit_depth: 10
-  bayer_pattern: rggb
+  bayer_pattern: bggr
 
 
 # -------------------- Module Algorithms Parameters --------------------

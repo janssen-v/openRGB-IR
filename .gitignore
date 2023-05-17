@@ -6,3 +6,6 @@
 tmp/
 temp/
 TODO*
+output/
+__pycache__
+.DS_Store
