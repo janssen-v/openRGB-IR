@@ -73,8 +73,8 @@ if __name__ == '__main__':
     print('Processing test raw...')
     demo_test_raw()
 
-    print('Processing Nikon D3x raw...')
-    demo_nikon_d3x()
+    #print('Processing Nikon D3x raw...')
+    #demo_nikon_d3x()
 
-    print('Processing Nikon D3x raw with intermediate results...')
-    demo_intermediate_results()
+    #print('Processing Nikon D3x raw with intermediate results...')
+    #demo_intermediate_results()
