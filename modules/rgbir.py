@@ -14,63 +14,40 @@ class RGBIR(BasicModule):
     def __init__(self, cfg):
         super().__init__(cfg)
         self.RESOLUTION = (self.cfg.hardware.raw_height, self.cfg.hardware.raw_width)
+        self.KERNEL_SIZE = (4,4)
 
-    #RESOLUTION = (1944, 2592)
-    KERNEL_SIZE = (4,4)
+        self.r_indices = (
+          (0, 2), (2, 0)
+        )
 
-    r_indices = (
-        (0, 2), (2, 0)
-    )
+        self.g_indices = (
+            (0, 1), (0, 3), 
+            (1, 0), (1, 2),
+            (2, 1), (2, 3),
+            (3, 0), (3, 2)
+        )
 
-    g_indices = (
-        (0, 1), (0, 3), 
-        (1, 0), (1, 2),
-        (2, 1), (2, 3),
-        (3, 0), (3, 2)
-    )
+        self.b_indices = (
+            (0, 0), (2, 2)
+        )
 
-    b_indices = (
-        (0, 0), (2, 2)
-    )
+        self.ir_indices = (
+            (1, 1), (1, 3),
+            (3, 1), (3, 3)
+        )
 
-    ir_indices = (
-        (1, 1), (1, 3),
-        (3, 1), (3, 3)
-    )
-
-    color_kernel = {
-        "R": r_indices,
-        "G": g_indices,
-        "B": b_indices,
-        "IR": ir_indices
-    }
-
-    KERNEL_INDICES = {
-        "r" : r_indices, # this becomes blue later
-        "g" : g_indices, 
-        "b" : b_indices,
-        "ir" : ir_indices # this becomes red later
-    }
+        self.color_kernel = {
+            "R"  : self.r_indices,
+            "G"  : self.g_indices,
+            "B"  : self.b_indices,
+            "IR" : self.ir_indices
+        }
 
     def truth_table(self, block):
         v_repetitions = math.floor(self.RESOLUTION[0] / self.KERNEL_SIZE[0])
         h_repetitions = math.floor(self.RESOLUTION[1] / self.KERNEL_SIZE[1])
         truth_table = np.tile(block, (v_repetitions, h_repetitions))
         return truth_table
-
-    def filter_by_color(self, source, color):
-        indices = self.color_kernel[color]
-        kernel_truth_table = np.zeros(self.KERNEL_SIZE, dtype=bool)
-        for row, col in indices:
-            kernel_truth_table[row][col] = True
-        return np.where(self.truth_table(kernel_truth_table), source, 0)
-
-    def remove_channel(self, source, color):
-        indices = self.color_kernel[color]
-        kernel_truth_table = np.zeros(self.KERNEL_SIZE, dtype=bool)
-        for row, col in indices:
-            kernel_truth_table[row][col] = True
-        return np.where(self.truth_table(kernel_truth_table), 0, source)
 
     def getIndices(self, color):
         indices = self.color_kernel[color]
@@ -129,7 +106,6 @@ class RGBIR(BasicModule):
             Rr = array[y-1][x+1]
             return (Rl + Rr) / numValid
 
-
     # Interpolate Red Values
     def oblique(self, array, x, y):
         if self.isOdd((x+y)/2):
@@ -141,8 +117,12 @@ class RGBIR(BasicModule):
     def cross(self, array, x, y):
         numValid = 4
         
+        # Case: No cutoff
+        if x != 0 and x < self.RESOLUTION[1]-2:
+            Bl = array[y][x-2]
+            Br = array[y][x+2]
         # Case: Left cutoff
-        if x == 0:
+        elif x == 0:
             numValid -= 1
             Bl = 0
             Br = array[y][x+2]
@@ -151,11 +131,11 @@ class RGBIR(BasicModule):
             numValid -= 1
             Bl = array[y][x-2]
             Br = 0
-        # Case: No cutoff
-        else:
-            Bl = array[y][x-2]
-            Br = array[y][x+2]
             
+        # Case: No cutoff
+        if y != 0 and y < self.RESOLUTION[0]-2:    
+            Bt = array[y-2][x]
+            Bd = array[y+2][x]
         # Case: Top cutoff
         if y == 0:
             numValid -= 1
@@ -166,10 +146,6 @@ class RGBIR(BasicModule):
             numValid -= 1
             Bt = array[y-2][x]
             Bd = 0
-        # Case: No cutoff
-        else:
-            Bt = array[y-2][x]
-            Bd = array[y+2][x]
 
         return (Bl + Br + Bt + Bd) / numValid
 
