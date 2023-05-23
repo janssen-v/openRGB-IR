@@ -1,124 +1,110 @@
-# Fast Open Image Signal Processor (fast-openISP)
+# openRGB-IR Image Signal Processor
 
-As told by its name, fast-openISP is a **faster** (and bugs-fixed) re-implementation of
-the [openISP](https://github.com/cruxopen/openISP) project.
-
-Compared to C-style code in the official openISP repo, fast-openISP uses pure matrix implementations based on Numpy, and
-increases processing speed **over 300 times**.
-
-Here is the running time in my Ryzen 7 1700 8-core 3.00GHz machine with the 1920x1080 input Bayer array:
-
-|Module             |openISP |fast-openISP|
-|:-----------------:|:------:|:----------:|
-|DPC                |20.57s  |0.29s       |
-|BLC                |11.75s  |0.02s       |
-|AAF                |16.87s  |0.08s       |
-|AWB                |7.54s   |0.02s       |
-|CNF                |73.99s  |0.25s       |
-|CFA                |40.71s  |0.20s       |
-|CCM                |56.85s  |0.06s       |
-|GAC                |25.71s  |0.07s       |
-|CSC                |60.32s  |0.06s       |
-|NLM                |1600.95s|5.37s       |
-|BNF                |801.24s |0.75s       |
-|CEH<sup>*</sup>    |-       |0.14s       |
-|EEH                |68.60s  |0.24s       |
-|FCS                |25.07s  |0.08s       |
-|HSC                |56.34s  |0.07s       |
-|BBC                |27.92s  |0.03s       |
-|End-to-end pipeline|2894.41s|7.82s       |
-
-> <sup>*</sup> CEH module is not included in the official openISP pipeline.
+openRGB-IR is a **free** and **open source** software image signal processor (ISP) for single sensor RGB-IR cameras such as the OmniVision OV5678 and OnSemi AR0237. It is an extension of the [fast-openISP](https://github.com/QiuJueqin/fast-openISP) project, with modules added to support end-to-end processing of color and infrared images from a single sensor with a RGB-IR color filter array (CFA).
 
 
 # Usage
 
 Clone this repo and run
 
+```sh
+python3 isp.py -s <source_file>
 ```
-python demo.py
+
+You may need to first install the required dependencies with `pip install -r requirements.txt`.
+
+## Arguments
+
+- `-s <source_file>` – **[REQUIRED]** Path to your RAW file
+
+- `-c <config_file>` – **[OPTIONAL]** Path to your config file
+
+- `-o <output_name>` – **[OPTIONAL]** Name of output file, e.g. 'output'
+
+> All outputs will be saved to `./output` directory as `<output_name>.png`. In addition, an infrared 	image `<output_name>_ir.png` will also be saved if the `irc` module is enabled.
+
+## Demo
+
+A demo file is provided to process the two test raws and a D65 chart from the `raw/` directory.
+
+```sh
+python3 demo.py
 ```
 
-The ISP outputs will be saved to `./output` directory.
+Below, the results of the demo with the **quality** config are shown:
 
-The only required package for pipeline execution is `numpy`. `opencv-python` and `scikit-image` are required only for 
-data IO.
+|  ![dark](./img/1.1.1.jpeg)  |  ![dark_ir](./img/1.1.2.jpeg)  |
+| :-------------------------: | :----------------------------: |
+|    **Fig 1.1.1 – Dark**     |    **Fig 1.1.2 – Dark IR**     |
+| ![bright](./img/1.2.1.jpeg) | ![bright_ir](./img/1.2.2.jpeg) |
+|   **Fig 1.2.1 – Bright**    |   **Fig 1.2.2 – Bright IR**    |
+|  ![d65](./img/1.3.1.jpeg)   |  ![d65_ir](./img/1.3.2.jpeg)   |
+|     **Fig 1.3.1 – D65**     |     **Fig 1.3.2 – D65 IR**     |
 
-# Algorithms
+# Modules
 
-All modules in fast-openISP
-reproduce [processing algorithms](https://github.com/cruxopen/openISP/blob/master/docs/Image%20Signal%20Processor.pdf)
-in openISP, except for EEH and BCC modules. In addition, a CEH (contrast enhancement) module with [CLAHE](https://en.wikipedia.org/wiki/Adaptive_histogram_equalization#Contrast_Limited_AHE) is 
-added into the fast-openISP pipeline.
+The openRGB-IR pipeline utilises processing algorithms from the fast-openISP project. The processing of color and infrared images from single sensor RGB-IR cameras is facilitated by the addition of IRC, RGBIR, and JBF modules.
 
-### EEH (edge enhancement)
+### IRC (IR Cut)
 
-The official openISP uses
-an [asymmetric kernel](https://github.com/cruxopen/openISP/blob/49de48282e66bdb283779394a23c9c0d6ba238ff/isp_pipeline.py#L150-L164)
-to extract edge map. In fast-openISP, however, we use the subtraction between the original and the gaussian filtered
-Y-channel as the edge estimation, which reduces the artifact when the enhancement gain is large.
+The IRC module extracts the value of the IR pixel from each 2x2 kernel and upsamples it to the full resolution of the sensor. The value obtained is then subtracted from the entire sensor region to compensate the spectral overlap between visible and infrared light captured by the color filter array. 
 
-### BCC (brightness & contrast control)
+| ![2.1](./img/2.1.jpeg)  | ![2.2](./img/1.1.1.jpeg) |
+| :---------------------: | :----------------------: |
+| **Fig 2.1 – No IR Cut** |   **Fig 2.2 – IR Cut**   |
 
-The official openISP enhances the image contrast by pixel-wise enlarging the difference between pixel values and a
-constant integer (128). In fast-openISP, we use the median value of the whole frame instead of a constant.
+A better result can be obtained by combining this with a physical band-stop 'notch' filter that cuts off near-IR radiation. We can see that a pure software based implementation of an IR-cut filter in **figure 1.2.1** is less than ideal, as there is not enough dynamic range in the sensor data to preserve the highlight information when it is exposed to a strong IR light source. IR cut attenuation is implemented in order to preserve the appearance of the highlight clipped regions, as they would otherwise look undersampled.
 
+### RGBIR (RGB-IR Color Interpolation)
 
-# Parameters
+| **B** | **G**  | **R** | **G**  |
+| :---: | :----: | :---: | :----: |
+| **G** | **IR** | **G** | **IR** |
+| **R** | **G**  | **B** | **G**  |
+| **G** | **IR** | **G** | **IR** |
 
-Tunable parameters in fast-openISP are differently named from those in openISP, but they are all self-explained,
-and no doubt you can easily tell the counterparts in two repos. All parameters are managed in a yaml 
-in [`./configs`](./configs), one file per camera.
+The RGB-IR color filter pattern is contained within a 4x4 kernel as shown in the table above. It contains half the amount of red and blue pixels that a traditional bayer filter pattern contains, which neccesitates a new interpolation algorithm. The simplest solution is to perform nearest neighbour interpolation of the blue and red pixels. However, this would result in increased chroma artifacting. 
 
-# Demo
+The interpolation algorithm implemented in this RGBIR module is a form of pattern-directed interpolation that takes the surrounding pixels in a 3x3 and 5x5 kernel for red and blue interpolation respectively into account to interpolate the missing color values of a traditional bayer pattern.
+$$
+\text{Oblique}_{red}= \frac{R_{left}+R_{right}}{2} \\\\
+\text{Cross}_{blue}=\frac{B_{top}+B_{down}+B_{left}+B_{right}}{4}
+$$
 
-|Bayer Input|
-|:-------------------------:|
-|<img src='assets/dpc.jpg' width='580'>| 
+From this module, we obtain a BGGR bayer pattern which can be demosaiced by various well-researched methods such as malvar interpolation or adaptive homogenity directed interpolation among others.
 
-
-|CFA Interpolation|
-|:-------------------------:|
-|<img src='assets/cfa.jpg' width='580'>| 
-
-
-|Color Correction|
-|:-------------------------:|
-|<img src='assets/ccm.jpg' width='580'>| 
-
-
-|Gamma Correction|
-|:-------------------------:|
-|<img src='assets/gac.jpg' width='580'>| 
+|          ![3.1](./img/3.1.jpeg)           |        ![3.2](./img/1.1.1.jpeg)        |
+| :---------------------------------------: | :------------------------------------: |
+| **Fig 3.1 – Without Color Interpolation** | **Fig 3.2 – With Color Interpolation** |
 
 
-|Non-local Means & Bilateral Filter|
-|:-------------------------:|
-|<img src='assets/bnf.jpg' width='580'>| 
+> Note that the implementation of the RGBIR module is an unoptimised proof of concept that uses a nested for-loop which causes its slow execution speed due to its time complexity of $O(n^2)$. Future revisions can be optimised by refactoring this module to use matrix operations that can bring time complexity down to $O(n)$ time.
 
+### JBF (Joint Bilateral Guided Upsampling Filter)
 
-|Contrast Enhancement|
-|:-------------------------:|
-|<img src='assets/ceh.jpg' width='580'>| 
+The JBF module filters the upsampled infrared image to better preserve edge detail. The approach taken in this implementation is to use the gaussian giltered luminance (Y) channel of the final YCbCr image as a guide for the edges to reduce artifacting caused by nearest neighbour upsampling. This allows us to increase the brightness gain without adding too much noise to the image.
+$$
+\text{Guide}=\text{Gaussian}(Y_\text{Luma})-\text{Upsample}(I_{\text{IR}})\\
+\text{Guided Upsample} = \text{Upsample}(I_{\text{IR}})+\text{Guide}
+$$
 
+|      ![4.1](./img/4.1.jpeg)      |      ![4.2](./img/4.2.jpeg)      |
+| :------------------------------: | :------------------------------: |
+| **Fig 4.1 – Luma gain sans JBF** | **Fig 4.2 – Luma gain with JBF** |
 
-|Edge Enhancement|
-|:-------------------------:|
-|<img src='assets/eeh.jpg' width='580'>| 
+As we can see in the images above, the filtered image is able to be pushed to a higher exposure much more cleanly and with much less noise than the unfiltered image, since it contains additional information from the luminance values of the R, G, and B pixels. 
 
+# Configuration
 
-|Hue & Saturation Control|
-|:-------------------------:|
-|<img src='assets/hsc.jpg' width='580'>| 
+Two configuration files (`quality.yaml` and `speed.yaml`) with predefined parameters are provided. They are tuned to the characteristics of the provided RAW files. Tunable parameters can be adjusted to suit the individual characteristics of a specific sensor. Their functions should be self explanatory given the comments in the provided sample `.yaml` configuration files.
 
-
-|Brightness & Contrast Control|
-|:-------------------------:|
-|<img src='assets/bcc.jpg' width='580'>| 
+> Note that some modules are dependent on others. Hence, some pipeline stages cannot be enabled without an earlier stage being enabled as well. Dependencies can be checked at the start of each module class. 
 
 
 # License
 
-Copyright 2021 Qiu Jueqin.
+Copyright © 2023 Vincentius Janssen.
 
-Licensed under [MIT](http://opensource.org/licenses/MIT).
+Licensed under the [MIT License](http://opensource.org/licenses/MIT).
+
+> Full attribution of works this project is derived from from can be found in the license file.
