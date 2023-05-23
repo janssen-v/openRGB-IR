@@ -17,3 +17,4 @@ from .nlm import NLM
 from .scl import SCL
 from .rgbir import RGBIR
 from .irc import IRC
+from .jbf import JBF
