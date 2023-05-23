@@ -18,43 +18,35 @@ class IRC(BasicModule):
         self.RESOLUTION = (self.cfg.hardware.raw_height, self.cfg.hardware.raw_width)
         self.cut_coef = self.params.cut_coef
         self.clip_coef = self.params.clip_coef
+        self.KERNEL_SIZE = (4,4)
 
-    #RESOLUTION = (1944, 2592)
-    KERNEL_SIZE = (4,4)
 
-    r_indices = (
-        (0, 2), (2, 0)
-    )
+        self.r_indices = (
+            (0, 2), (2, 0)
+        )
 
-    g_indices = (
-        (0, 1), (0, 3), 
-        (1, 0), (1, 2),
-        (2, 1), (2, 3),
-        (3, 0), (3, 2)
-    )
+        self.g_indices = (
+            (0, 1), (0, 3), 
+            (1, 0), (1, 2),
+            (2, 1), (2, 3),
+            (3, 0), (3, 2)
+        )
 
-    b_indices = (
-        (0, 0), (2, 2)
-    )
+        self.b_indices = (
+            (0, 0), (2, 2)
+        )
 
-    ir_indices = (
-        (1, 1), (1, 3),
-        (3, 1), (3, 3)
-    )
+        self.ir_indices = (
+            (1, 1), (1, 3),
+            (3, 1), (3, 3)
+        )
 
-    color_kernel = {
-        "R": r_indices,
-        "G": g_indices,
-        "B": b_indices,
-        "IR": ir_indices
-    }
-
-    KERNEL_INDICES = {
-        "r" : r_indices, # this becomes blue later
-        "g" : g_indices, 
-        "b" : b_indices,
-        "ir" : ir_indices # this becomes red later
-    }
+        self.color_kernel = {
+            "R" : self.r_indices,
+            "G" : self.g_indices,
+            "B" : self.b_indices,
+            "IR": self.ir_indices
+        }
 
     def truth_table(self, block):
         v_repetitions = math.floor(self.RESOLUTION[0] / self.KERNEL_SIZE[0])
@@ -84,17 +76,13 @@ class IRC(BasicModule):
         mask = np.where(self.truth_table(kernel_truth_table), 1, 0)
         return np.argwhere(mask == 1)
 
-    def isOdd(self, num):
-        return num % 2 != 0
-
     # Copy IR into a new array
     # Replace IR with interpolated R
     # Replace R with interpolated B
 
     def execute(self, data):
-        bayer = data['bayer'].astype(np.uint16)
+        bayer = data['bayer'].astype(np.uint32)
         #np.savetxt('output/unmod.txt', bayer, delimiter=', ', fmt='%1d')
-        
         
         ir_subarray = bayer[1::2, 1::2]
         
@@ -102,15 +90,16 @@ class IRC(BasicModule):
         ir_nn = np.repeat(np.repeat(ir_subarray, 2, axis=0), 2, axis=1)
         
         # Upscale the subarray (bicubic interpolation)
-        #ir_nn = zoom(ir_subarray, 2, order=1)
+        #ir_nn = zoom(ir_subarray, 2, order=3)
 
 
         #np.savetxt('output/upscaled_ir.txt', ir_nn, delimiter=', ', fmt='%1d')
         
         data['bayer_ir'] = ir_subarray
+        data['bayer_og'] = bayer.astype(np.uint16)
         data['ir'] = ir_nn.astype(np.uint16)
         
         ir_nn = np.clip(ir_nn, 0, np.max(bayer)/self.clip_coef)
     
                 
-        data['bayer'] = np.clip(bayer-(ir_nn * self.cut_coef), 0, np.max(bayer))
+        data['bayer'] = (np.clip(bayer-(ir_nn * self.cut_coef), 0, np.max(bayer))).astype(np.uint16)
