@@ -6,7 +6,7 @@ if __name__ == "__main__":
     speed = 'configs/speed.yaml'
     quality = 'configs/quality.yaml'
     
-    mode = speed
+    mode = quality
     
     print('Processing d65 color chart...')
     isp.colorChecker(mode)
