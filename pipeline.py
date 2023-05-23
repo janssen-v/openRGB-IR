@@ -114,7 +114,7 @@ class Pipeline:
             print_('Done. Elapsed {:.3f}s'.format(time.time() - start))
 
         data['output'] = self.get_output(data)
-        print_('Pipeline elapsed {:.3f}s'.format(time.time() - pipeline_start))
+        print_('Pipeline elapsed {:.3f}s\n'.format(time.time() - pipeline_start))
 
         return data, intermediates
 
