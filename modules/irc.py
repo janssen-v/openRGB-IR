@@ -4,7 +4,6 @@
 # Author: Vincentius Janssen (janssen.vincentius@gmail.com)
 
 import numpy as np
-import math
 from scipy.ndimage import zoom
 from .basic_module import BasicModule
 
