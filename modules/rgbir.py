@@ -1,13 +1,11 @@
 # File: rgbir.py
-# Description: RGBIR2BGGR
+# Description: RGB-IR to BGGR CFA Conversion
 # Created: 2023/05/20 04:18
 # Author: Vincentius Janssen (janssen.vincentius@gmail.com)
 
 import numpy as np
 import math
 from .basic_module import BasicModule
-from .helpers import pad, split_bayer, reconstruct_bayer, shift_array
-
 
 class RGBIR(BasicModule):
     
@@ -167,4 +165,4 @@ class RGBIR(BasicModule):
         
         #np.savetxt('output/test.txt', bayer, delimiter=', ', fmt='%1d')
         
-        data['bayer'] = bayer
+        data['bayer'] = bayer.astype(np.int16)

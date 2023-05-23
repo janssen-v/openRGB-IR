@@ -5,11 +5,10 @@
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from .basic_module import BasicModule
+from .basic_module import BasicModule, register_dependent_modules
 
 
-
-
+@register_dependent_modules(['irc', 'csc'])
 class JBF(BasicModule):
     def execute(self, data):
         
