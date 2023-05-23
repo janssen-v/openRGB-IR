@@ -66,10 +66,12 @@ A better result can be obtained by combining this with a physical band-stop 'not
 The RGB-IR color filter pattern is contained within a 4x4 kernel as shown in the table above. It contains half the amount of red and blue pixels that a traditional bayer filter pattern contains, which neccesitates a new interpolation algorithm. The simplest solution is to perform nearest neighbour interpolation of the blue and red pixels. However, this would result in increased chroma artifacting. 
 
 The interpolation algorithm implemented in this RGBIR module is a form of pattern-directed interpolation that takes the surrounding pixels in a 3x3 and 5x5 kernel for red and blue interpolation respectively into account to interpolate the missing color values of a traditional bayer pattern.
-$$
-\text{Oblique}_{red}= \frac{R_{left}+R_{right}}{2} \\\\
+```math
+\displaylines{
+\text{Oblique}_{red}= \frac{R_{left}+R_{right}}{2} \\
 \text{Cross}_{blue}=\frac{B_{top}+B_{down}+B_{left}+B_{right}}{4}
-$$
+}
+```
 
 From this module, we obtain a BGGR bayer pattern which can be demosaiced by various well-researched methods such as malvar interpolation or adaptive homogenity directed interpolation among others.
 
@@ -83,10 +85,12 @@ From this module, we obtain a BGGR bayer pattern which can be demosaiced by vari
 ### JBF (Joint Bilateral Guided Upsampling Filter)
 
 The JBF module filters the upsampled infrared image to better preserve edge detail. The approach taken in this implementation is to use the gaussian giltered luminance (Y) channel of the final YCbCr image as a guide for the edges to reduce artifacting caused by nearest neighbour upsampling. This allows us to increase the brightness gain without adding too much noise to the image.
-$$
-\text{Guide}=\text{Gaussian}(Y_\text{Luma})-\text{Upsample}(I_{\text{IR}})\\
+```math
+\displaylines{
+\text{Guide}=\text{Gaussian}(Y_\text{Luma})-\text{Upsample}(I_{\text{IR}}) \\
 \text{Guided Upsample} = \text{Upsample}(I_{\text{IR}})+\text{Guide}
-$$
+}
+```
 
 |      ![4.1](./img/4.1.jpeg)      |      ![4.2](./img/4.2.jpeg)      |
 | :------------------------------: | :------------------------------: |
