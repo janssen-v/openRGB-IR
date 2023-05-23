@@ -10,7 +10,6 @@ module_enable_status:                 # do NOT modify modules order
   ccm: True
   gac: True
   csc: True
-  jbf: True
   nlm: True
   bnf: False
   ceh: False
@@ -18,6 +17,7 @@ module_enable_status:                 # do NOT modify modules order
   fcs: False
   hsc: True
   bcc: True
+  jbf: True
   scl: False
 
 hardware:
