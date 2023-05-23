@@ -1,16 +1,17 @@
 module_enable_status:                 # do NOT modify modules order
   dpc: False
-  blc: False
+  blc: True
   aaf: False
   irc: True
   awb: True
-  cnf: False
+  cnf: True
   rgbir: True
   cfa: True
   ccm: True
   gac: True
   csc: True
-  nlm: False
+  jbf: True
+  nlm: True
   bnf: False
   ceh: False
   eeh: False
@@ -32,12 +33,12 @@ dpc:
   diff_threshold: 30
 
 blc:
-  bl_r: 0                    # a subtractive value, not additive!
+  bl_r: -10                    # a subtractive value, not additive!
   bl_gr: 0
   bl_gb: 0
   bl_b: 0
   alpha: 0                            # x1024
-  beta: 0                             # x1024
+  beta: 10                             # x1024
 
 aaf: ~
 
@@ -53,7 +54,7 @@ awb:
   b_gain: &b_gain 1408                # x1024
 
 cnf:
-  diff_threshold: 10
+  diff_threshold: 5
   r_gain: *r_gain                     # x1024
   b_gain: *b_gain                     # x1024
 
