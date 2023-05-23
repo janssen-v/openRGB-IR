@@ -35,6 +35,8 @@ def demo_test_raw():
     #output_ir = cv2.equalizeHist(output_ir)
     cv2.imwrite(output_path_ir, output_ir)
 
+
+
 if __name__ == '__main__':
     print('Processing test raw...')
     demo_test_raw()

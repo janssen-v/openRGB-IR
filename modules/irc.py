@@ -95,7 +95,7 @@ class IRC(BasicModule):
 
         #np.savetxt('output/upscaled_ir.txt', ir_nn, delimiter=', ', fmt='%1d')
         
-        #data['bayer_ir'] = ir_subarray
+        #idata['bayer_ir'] = ir_subarray
         #data['bayer_og'] = bayer.astype(np.uint16)
         data['ir'] = ir_nn.astype(np.uint16)
         
